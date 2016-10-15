@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 namespace FKolonial;
 
@@ -12,9 +11,9 @@ const KOLONIAL_API = 'https://www.kolonial.cz/api/v2';
 
 header('Content-Type: application/json; charset=utf-8');
 
-$fail = function (string $reason, int $code) {
-	http_response_code($code);
-	echo \json_encode((object) ['error' => $reason], JSON_UNESCAPED_UNICODE);
+$fail = function ($reason, $code) {
+	http_response_code((int) $code);
+	echo \json_encode((object) ['error' => (string) $reason], JSON_UNESCAPED_UNICODE);
 };
 
 $requiredQueryArgs = [
