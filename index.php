@@ -63,7 +63,21 @@ $orders = \json_decode($response->getBody()->getContents())->orders;
 
 foreach ($orders as $order) {
 	if ($order->number == $_GET['variable_symbol']) {
-		echo \json_encode($order, JSON_UNESCAPED_UNICODE);
+		$products = [];
+		foreach ($order->products as $product) {
+			if (!array_key_exists($product->product->id, $products)) {
+				$products[$product->product->id] = [
+					'id' => $product->product->id,
+					'name' => $product->product->name,
+					'image' => array_shift($product->product->images),
+					'quantity' => $product->quantity,
+					'unit' => $product->unit,
+				];
+			} else {
+				$products[$product->product->id]['quantity'] += $product->quantity;
+			}
+		}
+		echo \json_encode(array_values($products), JSON_UNESCAPED_UNICODE);
 		return;
 	}
 }
