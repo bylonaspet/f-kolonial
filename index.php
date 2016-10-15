@@ -5,6 +5,7 @@ namespace FKolonial;
 require_once __DIR__ . '/vendor/autoload.php';
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 
 const KOLONIAL_API = 'https://www.kolonial.cz/api/v2';
@@ -52,7 +53,11 @@ if ($order) {
 				'password' => $_GET['password'],
 			],
 		]);
+
 	} catch (ServerException $e) {
+		return $fail($e->getMessage(), 500);
+
+	} catch (ClientException $e) {
 		return $fail($e->getMessage(), 500);
 	}
 
@@ -64,16 +69,24 @@ if ($order) {
 				'Authorization' => 'Bearer ' . $accessToken,
 			],
 		]);
+
 	} catch (ServerException $e) {
+		return $fail($e->getMessage(), 500);
+	} catch (ClientException $e) {
 		return $fail($e->getMessage(), 500);
 	}
 
 	$orders = \json_decode($response->getBody()->getContents())->orders;
+	$found = false;
 	foreach ($orders as $order) {
 		if ($order->number == $_GET['variable_symbol']) {
 			$redis->set(sprintf('kolonial_order_%s', $_GET['variable_symbol']), \json_encode($order, JSON_UNESCAPED_UNICODE));
+			$found = true;
 			break;
 		}
+	}
+	if (!$found) {
+		$order = false;
 	}
 }
 
