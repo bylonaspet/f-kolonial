@@ -14,7 +14,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $fail = function (string $reason, int $code) {
 	http_response_code($code);
-	echo \json_encode((object) ['error' => $reason]);
+	echo \json_encode((object) ['error' => $reason], JSON_UNESCAPED_UNICODE);
 };
 
 $requiredQueryArgs = [
@@ -63,7 +63,7 @@ $orders = \json_decode($response->getBody()->getContents())->orders;
 
 foreach ($orders as $order) {
 	if ($order->number == $_GET['variable_symbol']) {
-		echo \json_encode($order);
+		echo \json_encode($order, JSON_UNESCAPED_UNICODE);
 		return;
 	}
 }
