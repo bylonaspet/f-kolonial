@@ -1,8 +1,7 @@
 <?php
+declare(strict_types=1);
 
 echo "ok";
-
-declare(strict_types=1);
 
 namespace FKolonial;
 
