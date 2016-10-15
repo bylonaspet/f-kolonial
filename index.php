@@ -32,8 +32,8 @@ foreach ($requiredQueryArgs as $arg) {
 }
 
 $redis = new \Redis();
-$redis->connect('bylonaspetredis02.redis.cache.windows.net', 6379);
-$redis->auth('pAWqHZ/DphvPji4GMmedkuy3jssOjCrkWz1SRZeDvnU=');
+$redis->connect('bylonaspetredis03.redis.cache.windows.net', 6379);
+$redis->auth('A5OReLoP6L533i5Gm8W2BMsATn51lTcyClcN4/wxOnQ=');
 
 $order = $redis->get(sprintf('kolonial_order_%s', $_GET['variable_symbol']));
 
