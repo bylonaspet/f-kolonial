@@ -30,55 +30,70 @@ foreach ($requiredQueryArgs as $arg) {
 	}
 }
 
-$guzzle = new Client(['verify' => false]);
+$redis = new \Redis();
+$redis->connect('bylonaspetredis02.redis.cache.windows.net', 6379);
+$redis->auth('pAWqHZ/DphvPji4GMmedkuy3jssOjCrkWz1SRZeDvnU=');
 
-try {
-	$response = $guzzle->post(KOLONIAL_API . '/authorize', [
-		'json' => [
-			'grant_type' => 'password',
-			'client_id' => $_GET['client_id'],
-			'client_secret' => $_GET['client_secret'],
-			'username' => $_GET['username'],
-			'password' => $_GET['password'],
-		],
-	]);
-} catch (ServerException $e) {
-	return $fail($e->getMessage(), 500);
-}
+$order = $redis->get(sprintf('kolonial_order_%s', $_GET['variable_symbol']));
 
-$accessToken = \json_decode($response->getBody()->getContents())->access_token;
+if ($order) {
+	$order = \json_decode($order);
 
-try {
-	$response = $guzzle->get(KOLONIAL_API . '/orders', [
-		'headers' => [
-			'Authorization' => 'Bearer ' . $accessToken,
-		],
-	]);
-} catch (ServerException $e) {
-	return $fail($e->getMessage(), 500);
-}
+} else {
+	$guzzle = new Client(['verify' => false]);
 
-$orders = \json_decode($response->getBody()->getContents())->orders;
-
-foreach ($orders as $order) {
-	if ($order->number == $_GET['variable_symbol']) {
-		$products = [];
-		foreach ($order->products as $product) {
-			if (!array_key_exists($product->product->id, $products)) {
-				$products[$product->product->id] = [
-					'id' => $product->product->id,
-					'name' => $product->product->name,
-					'image' => array_shift($product->product->images),
-					'quantity' => $product->quantity,
-					'unit' => $product->unit,
-				];
-			} else {
-				$products[$product->product->id]['quantity'] += $product->quantity;
-			}
-		}
-		echo \json_encode(array_values($products), JSON_UNESCAPED_UNICODE);
-		return;
+	try {
+		$response = $guzzle->post(KOLONIAL_API . '/authorize', [
+			'json' => [
+				'grant_type' => 'password',
+				'client_id' => $_GET['client_id'],
+				'client_secret' => $_GET['client_secret'],
+				'username' => $_GET['username'],
+				'password' => $_GET['password'],
+			],
+		]);
+	} catch (ServerException $e) {
+		return $fail($e->getMessage(), 500);
 	}
+
+	$accessToken = \json_decode($response->getBody()->getContents())->access_token;
+
+	try {
+		$response = $guzzle->get(KOLONIAL_API . '/orders', [
+			'headers' => [
+				'Authorization' => 'Bearer ' . $accessToken,
+			],
+		]);
+	} catch (ServerException $e) {
+		return $fail($e->getMessage(), 500);
+	}
+
+	$orders = \json_decode($response->getBody()->getContents())->orders;
+	foreach ($orders as $order) {
+		if ($order->number == $_GET['variable_symbol']) {
+			$redis->set(sprintf('kolonial_order_%s', $_GET['variable_symbol']), \json_encode($order, JSON_UNESCAPED_UNICODE));
+			break;
+		}
+	}
+}
+
+if ($order) {
+	$products = [];
+	foreach ($order->products as $product) {
+		if (!array_key_exists($product->product->id, $products)) {
+			$products[$product->product->id] = [
+				'id' => $product->product->id,
+				'name' => $product->product->name,
+				'image' => array_shift($product->product->images),
+				'quantity' => $product->quantity,
+				'unit' => $product->unit,
+			];
+		} else {
+			$products[$product->product->id]['quantity'] += $product->quantity;
+		}
+	}
+	echo \json_encode(array_values($products), JSON_UNESCAPED_UNICODE);
+	return;
 }
 
 return $fail('No order found', 404);
