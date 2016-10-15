@@ -100,6 +100,7 @@ if ($order) {
 				'image' => array_shift($product->product->images),
 				'quantity' => $product->quantity,
 				'unit' => $product->unit,
+				'url' => 'https://www.kolonial.cz/product?productId=' . $product->product->id,
 			];
 		} else {
 			$products[$product->product->id]['quantity'] += $product->quantity;
